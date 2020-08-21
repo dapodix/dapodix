@@ -16,9 +16,9 @@ before_install:
 install:
     - poetry install
 
-script: poetry run pytest
-
-after_script: coverage run tests.py
+script:
+    - poetry run pytest
+    - coverage run tests
 
 after_success:
     - codecov
