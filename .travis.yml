@@ -1,7 +1,8 @@
-language: python
+branches:
+  only:
+  - master
 
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+language: python
 
 cache: pip
 
@@ -10,8 +11,14 @@ python:
 
 before_install:
     - pip install poetry
+    - pip install codecov
 
 install:
     - poetry install
 
-script: poetry run pytest --cov=./
+script: poetry run pytest
+
+after_script: coverage run tests.py
+
+after_success:
+    - codecov
