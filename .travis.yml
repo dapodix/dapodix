@@ -18,7 +18,7 @@ install:
 
 script:
     - poetry run pytest
-    - coverage run tests
+    - coverage run dapodix
 
 after_success:
     - codecov
