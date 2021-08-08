@@ -349,6 +349,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "types-cachetools"
+version = "0.1.10"
+description = "Typing stubs for cachetools"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "typing-extensions"
 version = "3.10.0.0"
 description = "Backported and Experimental Type Hints for Python 3.5+"
@@ -392,7 +400,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "18a4171aed15fef974e85deda25378c941b7a83a905cccb6a74650b15111e5a3"
+content-hash = "5e3a947312ce6cd05df1912bf77d36e020cbacf80dfad828da5f3fcd619835ee"
 
 [metadata.files]
 appdirs = [
@@ -598,6 +606,10 @@ typed-ast = [
     {file = "typed_ast-1.4.3-cp39-cp39-win32.whl", hash = "sha256:209596a4ec71d990d71d5e0d312ac935d86930e6eecff6ccc7007fe54d703808"},
     {file = "typed_ast-1.4.3-cp39-cp39-win_amd64.whl", hash = "sha256:9c6d1a54552b5330bc657b7ef0eae25d00ba7ffe85d9ea8ae6540d2197a3788c"},
     {file = "typed_ast-1.4.3.tar.gz", hash = "sha256:fb1bbeac803adea29cedd70781399c99138358c26d05fcbd23c13016b7f5ec65"},
+]
+types-cachetools = [
+    {file = "types-cachetools-0.1.10.tar.gz", hash = "sha256:f2727cf379989ba4d081f9ed11ec28c6730adbd120dc0deb2036c5ef69e515e0"},
+    {file = "types_cachetools-0.1.10-py3-none-any.whl", hash = "sha256:76d312d6e55fe19f7a2ea9a3271945e6f5c56f4fd76cc3cb2366109785f3462b"},
 ]
 typing-extensions = [
     {file = "typing_extensions-3.10.0.0-py2-none-any.whl", hash = "sha256:0ac0f89795dd19de6b97debb0c6af1c70987fd80a2d62d1958f7e56fcc31b497"},
