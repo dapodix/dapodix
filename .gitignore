@@ -137,8 +137,10 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Lock file
-poetry.lock
-
 # IDE
-.vscode
+.vscode/
+.vs/
+
+# Tests
+*.test.py
+*.test.xlsx
