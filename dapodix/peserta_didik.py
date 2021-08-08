@@ -8,6 +8,7 @@ from dapodik.customrest import Wilayah
 from dapodik.peserta_didik import PesertaDidik, CreatePesertaDidik
 from dapodik.rest import JenjangPendidikan, Pekerjaan, Penghasilan
 
+from dapodix import ContextObject, ClickContext
 from dapodix.utils import get_data_excel
 
 DATA_INDIVIDU = {
@@ -82,15 +83,13 @@ class RegistrasiPesertaDidik:
 
     def __init__(
         self,
-        username: str,
-        password: str,
+        dapodik: Dapodik,
         filepath: str,
         sheet: str,
         start: int,
         end: int,
-        server: str = "http://localhost:5774/",
     ):
-        self.dapodik = Dapodik(username, password, server=server)
+        self.dapodik = dapodik
         self.filepath = filepath
         self.sheet = sheet
         self.start_row = start
@@ -252,13 +251,7 @@ class RegistrasiPesertaDidik:
         return 1
 
 
-@click.group()
-@click.pass_context
-def peserta_didik(ctx):
-    pass
-
-
-@peserta_didik.command()
+@click.group(name="peserta_didik", invoke_without_command=True)
 @click.option("--email", required=True, help="Email dapodik")
 @click.option(
     "--password",
@@ -268,26 +261,38 @@ def peserta_didik(ctx):
     confirmation_prompt=True,
     help="Password dapodik",
 )
+@click.option("--server", default="http://localhost:5774/", help="URL aplikasi dapodik")
+@click.pass_context
+def peserta_didik(ctx: ClickContext, email: str, password: str, server: str):
+    ctx.ensure_object(ContextObject)
+    ctx.obj.username = email
+    ctx.obj.password = password
+    ctx.obj.server = server
+    if ctx.invoked_subcommand is None:
+        dapodik = ctx.obj.dapodik
+        sekolah = dapodik.sekolah()
+        click.echo("Daftar Peserta didik")
+        for pd in dapodik.peserta_didik(sekolah_id=sekolah.sekolah_id):
+            click.echo(str(pd))
+
+
+@peserta_didik.command()
 @click.option("--sheet", default="Peserta Didik", help="Nama sheet dalam file excel")
 @click.option("--start", type=int, required=True, help="Baris awal data")
 @click.option("--end", type=int, required=True, help="Baris akhir data")
-@click.option("--server", default="http://localhost:5774/", help="URL aplikasi dapodik")
 @click.argument("filepath", type=click.Path(exists=True), required=True)
+@click.pass_context
 def registrasi(
-    email: str,
-    password: str,
+    ctx,
     filepath: str,
     sheet: str,
     start: int,
     end: int,
-    server: str,
 ):
     return RegistrasiPesertaDidik(
-        username=email,
-        password=password,
+        dapodik=ctx.obj.dapodik,
         filepath=filepath,
         sheet=sheet,
         start=start,
         end=end,
-        server=server,
     )

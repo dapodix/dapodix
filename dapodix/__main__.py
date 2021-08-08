@@ -4,9 +4,12 @@ from . import __version__, __dapodik_version__
 from .peserta_didik import peserta_didik
 
 
+@click.group("dapodix")
 def main():
-    cli = click.CommandCollection("dapodix", sources=[peserta_didik])
-    cli()
+    pass
+
+
+main.add_command(peserta_didik, "peserta_didik")
 
 
 if __name__ == "__main__":
