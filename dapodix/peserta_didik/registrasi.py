@@ -24,60 +24,63 @@ from dapodik.sekolah import Sekolah
 from dapodix.utils import get_data_excel
 
 DATA_INDIVIDU = {
-    "nama": "B",
-    "jenis_kelamin": "C",
-    "nik": "D",
-    "no_kk": "E",
-    "tempat_lahir": "F",
-    "tanggal_lahir": "G",
-    "reg_akta_lahir": "H",
-    "agama_id": "I",
-    "alamat_jalan": "J",
-    "rt": "K",
-    "rw": "L",
-    "nama_dusun": "M",
-    "kode_wilayah": "N",
-    "desa_kelurahan": "O",
-    "kode_pos": "P",
-    "anak_keberapa": "Q",
+    "nisn": "B",
+    "nama": "C",
+    "jenis_kelamin": "D",
+    "nik": "E",
+    "no_kk": "F",
+    "tempat_lahir": "G",
+    "tanggal_lahir": "H",
+    "reg_akta_lahir": "I",
+    "agama_id": "J",
+    "alamat_jalan": "K",
+    "rt": "L",
+    "rw": "M",
+    "nama_dusun": "N",
+    "kode_wilayah": "O",
+    "desa_kelurahan": "P",
+    "kode_pos": "Q",
+    "anak_keberapa": "R",
+    "nomor_telepon_seluler": "AE",
+    "email": "AF",
 }
 
 DATA_REGISTRASI = {
     "nipd": "A",
-    "jenis_pendaftaran_id": "AF",
-    "tanggal_masuk_sekolah": "AG",
-    "sekolah_asal": "AH",
-    "id_hobby": "AI",
-    "id_cita": "AJ",
-    "a_pernah_paud": "AK",
-    "a_pernah_tk": "AL",
+    "jenis_pendaftaran_id": "AG",
+    "tanggal_masuk_sekolah": "AH",
+    "sekolah_asal": "AI",
+    "id_hobby": "AJ",
+    "id_cita": "AK",
+    "a_pernah_paud": "AL",
+    "a_pernah_tk": "AM",
 }
 
 DATA_LONGITUDINAL = {
-    "tinggi_badan": "AM",
-    "berat_badan": "AN",
-    "lingkar_kepala": "AO",
-    "jarak_rumah_ke_sekolah": "AP",
-    "menit_tempuh_ke_sekolah": "AQ",
-    "jumlah_saudara_kandung": "AR",
+    "tinggi_badan": "AN",
+    "berat_badan": "AO",
+    "lingkar_kepala": "AP",
+    "jarak_rumah_ke_sekolah": "AQ",
+    "menit_tempuh_ke_sekolah": "AR",
+    "jumlah_saudara_kandung": "AS",
 }
 
 DATA_AYAH = {
-    "nama_ayah": "R",
-    "nik_ayah": "S",
-    "tahun_lahir_ayah": "T",
-    "jenjang_pendidikan_ayah": "U",
-    "pekerjaan_id_ayah": "V",
-    "penghasilan_id_ayah": "W",
+    "nama_ayah": "S",
+    "nik_ayah": "T",
+    "tahun_lahir_ayah": "U",
+    "jenjang_pendidikan_ayah": "V",
+    "pekerjaan_id_ayah": "W",
+    "penghasilan_id_ayah": "X",
 }
 
 DATA_IBU = {
-    "nama_ibu_kandung": "X",
-    "nik_ibu": "Y",
-    "tahun_lahir_ibu": "Z",
-    "jenjang_pendidikan_ibu": "AA",
-    "pekerjaan_id_ibu": "AB",
-    "penghasilan_id_ibu": "AC",
+    "nama_ibu_kandung": "Y",
+    "nik_ibu": "Z",
+    "tahun_lahir_ibu": "AA",
+    "jenjang_pendidikan_ibu": "AB",
+    "pekerjaan_id_ibu": "AC",
+    "penghasilan_id_ibu": "AD",
 }
 
 
@@ -240,14 +243,18 @@ class RegistrasiPesertaDidikCommand:
 
     def transform_data_individu(
         self,
+        nisn: str,
         nama: str,
         jenis_kelamin: str,
         agama_id: str,
         kode_wilayah: str,
         tempat_lahir: str,
         reg_akta_lahir: str,
+        nomor_telepon_seluler: str,
+        email: str,
         **kwargs: Any,
     ) -> dict:
+        kwargs["nisn"] = nisn if nisn else ""
         kwargs["nama"] = nama.upper()
         jenis_kelamin = jenis_kelamin.upper()
         assert jenis_kelamin in ("L", "P")
@@ -256,6 +263,10 @@ class RegistrasiPesertaDidikCommand:
         kwargs["tempat_lahir"] = tempat_lahir.upper()
         kwargs["kode_wilayah"] = self.find_kode_wilayah(kode_wilayah)
         kwargs["reg_akta_lahir"] = reg_akta_lahir if reg_akta_lahir else ""
+        kwargs["nomor_telepon_seluler"] = (
+            nomor_telepon_seluler if nomor_telepon_seluler else ""
+        )
+        kwargs["email"] = email if email else ""
         return kwargs
 
     def transform_data_registrasi(
