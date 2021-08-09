@@ -16,7 +16,7 @@ def get_data_ws(ws: Worksheet, mapping: Dict[str, str], row: int) -> Dict[str, A
     """
     result: Dict[str, Any] = dict()
     for key, col in mapping.items():
-        result = ws[f"{col}{row}"].value
+        result[key] = ws[f"{col}{row}"].value
     return result
 
 
