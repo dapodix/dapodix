@@ -19,7 +19,7 @@ python = "^3.7"
 openpyxl = "^3.0.7"
 click = "^8.0.1"
 cachetools = "^4.2.2"
-dapodik = "^0.16.2"
+dapodik = "^0.16.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
