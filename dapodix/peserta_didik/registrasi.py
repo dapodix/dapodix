@@ -1,11 +1,23 @@
 from cachetools import cachedmethod
 from operator import attrgetter
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dapodik import Dapodik
 from dapodik.customrest import Wilayah
-from dapodik.peserta_didik import PesertaDidik, CreatePesertaDidik
-from dapodik.rest import Agama, JenjangPendidikan, Pekerjaan, Penghasilan
+from dapodik.peserta_didik import (
+    PesertaDidik,
+    CreatePesertaDidik,
+    RegistrasiPesertaDidik,
+)
+from dapodik.rest import (
+    Agama,
+    JenisCita,
+    JenisHobby,
+    JenisPendaftaran,
+    JenjangPendidikan,
+    Pekerjaan,
+    Penghasilan,
+)
 
 from dapodix.utils import get_data_excel
 
@@ -28,6 +40,17 @@ DATA_INDIVIDU = {
     "anak_keberapa": "Q",
 }
 
+DATA_REGISTRASI = {
+    "nipd": "A",
+    "jenis_pendaftaran_id": "AF",
+    "tanggal_masuk_sekolah": "AG",
+    "sekolah_asal": "AH",
+    "id_hobby": "AI",
+    "id_cita": "AJ",
+    "a_pernah_paud": "AK",
+    "a_pernah_tk": "AL",
+}
+
 DATA_AYAH = {
     "nama_ayah": "R",
     "nik_ayah": "S",
@@ -47,7 +70,7 @@ DATA_IBU = {
 }
 
 
-class RegistrasiPesertaDidik:
+class RegistrasiPesertaDidikCommand:
     nisn = ""
     kebutuhan_khusus_id = 0
     lintang = 0
@@ -92,17 +115,30 @@ class RegistrasiPesertaDidik:
         self.sheet = sheet
         self.rows = rows
         self.sekolah = self.dapodik.sekolah()
-        self.penghasilan_cache: Dict[tuple, int] = dict()
+        # Individu
         self.agama_cache: Dict[str, int] = dict()
         self.kode_wilayah_cache: Dict[str, str] = dict()
+        # Orang tua
+        self.penghasilan_cache: Dict[tuple, int] = dict()
         self.jenjang_pendidikan_cache: Dict[str, int] = dict()
         self.pekerjaan_cache: Dict[str, int] = dict()
+        # Registrasi
+        self.cita_cache: Dict[str, int] = dict()
+        self.hobby_cache: Dict[str, int] = dict()
+        self.pendaftaran_cache: Dict[str, int] = dict()
+        # INDIVIDU
         self.AGAMA: List[Agama] = self.dapodik.agama()
+        # ORANG TUA
         self.JENJANG_PENDIDIKAN: List[
             JenjangPendidikan
         ] = self.dapodik.jenjang_pendidikan()
         self.PEKERJAAN: List[Pekerjaan] = self.dapodik.pekerjaan()
         self.PENGHASILAN: List[Penghasilan] = self.dapodik.penghasilan()
+        # REGISTRASI
+        self.CITA: List[JenisCita] = self.dapodik.jenis_cita()
+        self.HOBBY: List[JenisHobby] = self.dapodik.jenis_hobby()
+        self.PENDAFTARAN: List[JenisPendaftaran] = self.dapodik.jenis_pendaftaran()
+
         self.start()
 
     def start(self) -> Dict[int, PesertaDidik]:
@@ -124,7 +160,7 @@ class RegistrasiPesertaDidik:
             self.rows,
             DATA_IBU,
         )
-        result: Dict[int, PesertaDidik] = dict()
+        peserta_didik_baru: Dict[int, PesertaDidik] = dict()
         for index, data_individu in raw_data_individu.items():
             data_ayah = raw_data_ayah[index]
             data_ibu = raw_data_ibu[index]
@@ -132,15 +168,41 @@ class RegistrasiPesertaDidik:
             data.update(self.transform_data_individu(**data_individu))
             data.update(self.transform_data_ayah(**data_ayah))
             data.update(self.transform_data_ibu(**data_ibu))
-            result[index] = self.registrasi(data)
-        return result
+            peserta_didik_baru[index] = self.tambah_peserta_didik(data)
+        raw_data_registrasi = get_data_excel(
+            self.filepath,
+            self.sheet,
+            self.rows,
+            DATA_REGISTRASI,
+        )
+        for index, data_registrasi in raw_data_registrasi.items():
+            data = self.get_default_registrasi()
+            data.update(self.transform_data_registrasi(**data_registrasi))
+            peserta_didik = peserta_didik_baru[index]
+            peserta_didik_baru[index] = self.registrasi_peserta_didik(
+                data, peserta_didik
+            )
+        return peserta_didik_baru
 
-    def registrasi(self, data: dict) -> PesertaDidik:
+    def tambah_peserta_didik(self, data: dict) -> PesertaDidik:
         pdb = CreatePesertaDidik(
             kode_wilayah_str=data["kode_wilayah"],
             **data,
         )
         return pdb.save(self.dapodik)
+
+    def registrasi_peserta_didik(
+        self, data: dict, peserta_didik: PesertaDidik
+    ) -> PesertaDidik:
+        reg_pd = RegistrasiPesertaDidik(
+            peserta_didik_id=peserta_didik.peserta_didik_id,
+            sekolah_id=peserta_didik.sekolah_id,
+            **data,
+        )
+        reg_pd.sekolah_id = self.sekolah.sekolah_id
+        peserta_didik._dapodik = self.dapodik
+        peserta_didik.register(reg_pd)
+        return peserta_didik
 
     def transform_data_individu(
         self,
@@ -159,8 +221,27 @@ class RegistrasiPesertaDidik:
         kwargs["agama_id"] = self.parse_agama(agama_id)
         kwargs["tempat_lahir"] = tempat_lahir.upper()
         kwargs["kode_wilayah"] = self.find_kode_wilayah(kode_wilayah)
-        if reg_akta_lahir:
-            kwargs["reg_akta_lahir"]
+        kwargs["reg_akta_lahir"] = reg_akta_lahir if reg_akta_lahir else ""
+        return kwargs
+
+    def transform_data_registrasi(
+        self,
+        jenis_pendaftaran_id: str,
+        sekolah_asal: str,
+        nipd: str,
+        id_hobby: str,
+        id_cita: str,
+        a_pernah_paud: str,
+        a_pernah_tk: str,
+        **kwargs: Any,
+    ) -> dict:
+        kwargs["jenis_pendaftaran_id"] = self.parse_pendaftaran(jenis_pendaftaran_id)
+        kwargs["id_hobby"] = self.parse_hobby(id_hobby)
+        kwargs["id_cita"] = self.parse_cita(id_cita)
+        kwargs["sekolah_asal"] = sekolah_asal if sekolah_asal else ""
+        kwargs["nipd"] = nipd if nipd else ""
+        kwargs["a_pernah_paud"] = 1 if a_pernah_paud == "YA" else 0
+        kwargs["a_pernah_tk"] = 1 if a_pernah_tk == "YA" else 0
         return kwargs
 
     def transform_data_ayah(
@@ -171,7 +252,9 @@ class RegistrasiPesertaDidik:
         penghasilan_id_ayah: str,
         **kwargs: Any,
     ) -> dict:
-        if tahun_lahir_ayah.isdigit():
+        if isinstance(tahun_lahir_ayah, int):
+            kwargs["tahun_lahir_ayah"] = str(tahun_lahir_ayah)
+        elif isinstance(tahun_lahir_ayah, str) and tahun_lahir_ayah.isdigit():
             kwargs["tahun_lahir_ayah"] = tahun_lahir_ayah
         else:
             kwargs["tahun_lahir_ayah"] = "19" + kwargs["nik_ayah"][10:12]
@@ -192,7 +275,9 @@ class RegistrasiPesertaDidik:
         penghasilan_id_ibu: str,
         **kwargs: Any,
     ) -> dict:
-        if tahun_lahir_ibu.isdigit():
+        if isinstance(tahun_lahir_ibu, int):
+            kwargs["tahun_lahir_ibu"] = str(tahun_lahir_ibu)
+        elif isinstance(tahun_lahir_ibu, str) and tahun_lahir_ibu.isdigit():
             kwargs["tahun_lahir_ibu"] = tahun_lahir_ibu
         else:
             kwargs["tahun_lahir_ibu"] = "19" + kwargs["nik_ibu"][10:12]
@@ -253,6 +338,27 @@ class RegistrasiPesertaDidik:
                 return pekerjaan.pekerjaan_id
         return 1
 
+    @cachedmethod(attrgetter("cita_cache"))
+    def parse_cita(self, val: str) -> int:
+        for cita in self.CITA:
+            if val in cita.nm_cita:
+                return cita.id_cita
+        return 8
+
+    @cachedmethod(attrgetter("hobby_cache"))
+    def parse_hobby(self, val: str) -> int:
+        for hobby in self.HOBBY:
+            if val in hobby.nm_hobby:
+                return hobby.id_hobby
+        return 6
+
+    @cachedmethod(attrgetter("pendaftaran_cache"))
+    def parse_pendaftaran(self, val: str) -> int:
+        for pendaftaran in self.PENDAFTARAN:
+            if val in pendaftaran.nama:
+                return pendaftaran.jenis_pendaftaran_id
+        return 1
+
     def get_default(self) -> Dict[str, Any]:
         return {
             "nisn": self.nisn,
@@ -283,4 +389,33 @@ class RegistrasiPesertaDidik:
             "nomor_telepon_rumah": self.nomor_telepon_rumah,
             "nomor_telepon_seluler": self.nomor_telepon_seluler,
             "email": self.email,
+        }
+
+    def get_default_registrasi(self) -> Dict[str, Any]:
+        return {
+            "registrasi_id": "Admin.model.RegistrasiPesertaDidik-3",
+            # "peserta_didik_id":"b5197708-fb76-4da2-ae4b-ebbed2447c90",
+            "jurusan_sp_id": "",
+            # "sekolah_id":"dc021957-48cb-42de-9d5b-b5264e542418",
+            # "jenis_pendaftaran_id":1,
+            # "tanggal_masuk_sekolah": "2021-07-05",
+            "jenis_keluar_id": "",
+            "tanggal_keluar": None,
+            "keterangan": "",
+            "no_skhun": "",
+            # "nipd": "",
+            # "id_hobby":6,
+            # "id_cita":8,
+            "no_seri_ijazah": "",
+            "no_peserta_ujian": "",
+            # "sekolah_asal": "",
+            "a_pernah_paud": 0,
+            "a_pernah_tk": 0,
+            "jurusan_sp_id_str": "",
+            "peserta_didik_id_str": "",
+            "sekolah_id_str": "",
+            "jenis_pendaftaran_id_str": "",
+            "id_hobby_str": "",
+            "id_cita_str": "",
+            "jenis_keluar_id_str": "",
         }

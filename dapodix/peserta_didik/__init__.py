@@ -2,7 +2,7 @@ import click
 from dapodix import ClickContext, ContextObject
 from dapodix.utils import parse_range
 
-from .registrasi import RegistrasiPesertaDidik
+from .registrasi import RegistrasiPesertaDidikCommand
 
 
 @click.group(name="peserta_didik", invoke_without_command=True)
@@ -45,6 +45,6 @@ def registrasi(
     sheet: str,
     range: str,
 ):
-    return RegistrasiPesertaDidik(
+    return RegistrasiPesertaDidikCommand(
         dapodik=ctx.obj.dapodik, filepath=filepath, sheet=sheet, rows=parse_range(range)
     )
