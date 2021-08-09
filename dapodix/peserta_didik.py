@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 from dapodik import Dapodik
 from dapodik.customrest import Wilayah
 from dapodik.peserta_didik import PesertaDidik, CreatePesertaDidik
-from dapodik.rest import JenjangPendidikan, Pekerjaan, Penghasilan
+from dapodik.rest import Agama, JenjangPendidikan, Pekerjaan, Penghasilan
 
 from dapodix import ContextObject, ClickContext
 from dapodix.utils import get_data_excel, parse_range
@@ -50,6 +50,7 @@ DATA_IBU = {
 
 
 class RegistrasiPesertaDidik:
+    nisn = ""
     kebutuhan_khusus_id = 0
     lintang = 0
     bujur = 0
@@ -94,14 +95,17 @@ class RegistrasiPesertaDidik:
         self.rows = rows
         self.sekolah = self.dapodik.sekolah()
         self.penghasilan_cache: Dict[tuple, int] = dict()
+        self.agama_cache: Dict[str, int] = dict()
         self.kode_wilayah_cache: Dict[str, str] = dict()
         self.jenjang_pendidikan_cache: Dict[str, int] = dict()
         self.pekerjaan_cache: Dict[str, int] = dict()
+        self.AGAMA: List[Agama] = self.dapodik.agama()
         self.JENJANG_PENDIDIKAN: List[
             JenjangPendidikan
         ] = self.dapodik.jenjang_pendidikan()
         self.PEKERJAAN: List[Pekerjaan] = self.dapodik.pekerjaan()
         self.PENGHASILAN: List[Penghasilan] = self.dapodik.penghasilan()
+        self.start()
 
     def start(self) -> Dict[int, PesertaDidik]:
         raw_data_individu = get_data_excel(
@@ -126,7 +130,7 @@ class RegistrasiPesertaDidik:
         for index, data_individu in raw_data_individu.items():
             data_ayah = raw_data_ayah[index]
             data_ibu = raw_data_ibu[index]
-            data: Dict[str, Any] = dict()
+            data = self.get_default()
             data.update(self.transform_data_individu(**data_individu))
             data.update(self.transform_data_ayah(**data_ayah))
             data.update(self.transform_data_ibu(**data_ibu))
@@ -135,52 +139,44 @@ class RegistrasiPesertaDidik:
 
     def registrasi(self, data: dict) -> PesertaDidik:
         pdb = CreatePesertaDidik(
-            kebutuhan_khusus_id=self.kebutuhan_khusus_id,
-            lintang=self.lintang,
-            bujur=self.bujur,
-            jenis_tinggal_id=self.jenis_tinggal_id,
-            alat_transportasi_id=self.alat_transportasi_id,
-            anak_keberapa=self.anak_keberapa,
-            penerima_kps=self.penerima_kps,
-            penerima_kip=self.penerima_kip,
-            layak_pip=self.layak_pip,
-            id_layak_pip=self.id_layak_pip,
-            sekolah_id=self.sekolah.sekolah_id,
-            kewarganegaraan=self.kewarganegaraan,
-            no_kks=self.no_kks,
-            no_kps=self.no_kps,
-            no_kip=self.no_kip,
-            nm_kip=self.nm_kip,
-            # Data Ayah Kandung
-            kebutuhan_khusus_id_ayah=self.kebutuhan_khusus_id_ayah,
-            # Data Ibu Kandung
-            kebutuhan_khusus_id_ibu=self.kebutuhan_khusus_id_ibu,
-            # Data Wali
-            nama_wali=self.nama_wali,
-            nik_wali=self.nik_wali,
-            tahun_lahir_wali=self.tahun_lahir_wali,
-            jenjang_pendidikan_wali=self.jenjang_pendidikan_wali,
-            pekerjaan_id_wali=self.pekerjaan_id_wali,
-            penghasilan_id_wali=self.penghasilan_id_wali,
-            # Kontak
-            nomor_telepon_rumah=self.nomor_telepon_rumah,
-            nomor_telepon_seluler=self.nomor_telepon_seluler,
-            email=self.email,
+            kode_wilayah_str=data["kode_wilayah"],
             **data,
         )
         return pdb.save(self.dapodik)
 
-    def transform_data_individu(self, kode_wilayah: str, **kwargs: Any) -> dict:
+    def transform_data_individu(
+        self,
+        nama: str,
+        jenis_kelamin: str,
+        agama_id: str,
+        kode_wilayah: str,
+        tempat_lahir: str,
+        reg_akta_lahir: str,
+        **kwargs: Any,
+    ) -> dict:
+        kwargs["nama"] = nama.upper()
+        jenis_kelamin = jenis_kelamin.upper()
+        assert jenis_kelamin in ("L", "P")
+        kwargs["jenis_kelamin"] = jenis_kelamin
+        kwargs["agama_id"] = self.parse_agama(agama_id)
+        kwargs["tempat_lahir"] = tempat_lahir.upper()
         kwargs["kode_wilayah"] = self.find_kode_wilayah(kode_wilayah)
+        if reg_akta_lahir:
+            kwargs["reg_akta_lahir"]
         return kwargs
 
     def transform_data_ayah(
         self,
+        tahun_lahir_ayah: str,
         jenjang_pendidikan_ayah: str,
         pekerjaan_id_ayah: str,
         penghasilan_id_ayah: str,
         **kwargs: Any,
     ) -> dict:
+        if tahun_lahir_ayah.isdigit():
+            kwargs["tahun_lahir_ayah"] = tahun_lahir_ayah
+        else:
+            kwargs["tahun_lahir_ayah"] = "19" + kwargs["nik_ayah"][10:12]
         kwargs["jenjang_pendidikan_ayah"] = self.parse_jenjang_pendidikan(
             jenjang_pendidikan_ayah
         )
@@ -192,11 +188,16 @@ class RegistrasiPesertaDidik:
 
     def transform_data_ibu(
         self,
+        tahun_lahir_ibu: str,
         jenjang_pendidikan_ibu: str,
         pekerjaan_id_ibu: str,
         penghasilan_id_ibu: str,
         **kwargs: Any,
     ) -> dict:
+        if tahun_lahir_ibu.isdigit():
+            kwargs["tahun_lahir_ibu"] = tahun_lahir_ibu
+        else:
+            kwargs["tahun_lahir_ibu"] = "19" + kwargs["nik_ibu"][10:12]
         kwargs["jenjang_pendidikan_ibu"] = self.parse_jenjang_pendidikan(
             jenjang_pendidikan_ibu
         )
@@ -228,6 +229,13 @@ class RegistrasiPesertaDidik:
                     return penghasilan.penghasilan_id
         return 99
 
+    @cachedmethod(attrgetter("agama_cache"))
+    def parse_agama(self, keyword: str) -> int:
+        for agama in self.AGAMA:
+            if keyword in agama.nama:
+                return agama.agama_id
+        return 1
+
     @cachedmethod(attrgetter("kode_wilayah_cache"))
     def find_kode_wilayah(self, keyword: str) -> str:
         wilayah: List[Wilayah] = self.dapodik.kecamatan(keyword)
@@ -246,6 +254,38 @@ class RegistrasiPesertaDidik:
             if val in pekerjaan.nama:
                 return pekerjaan.pekerjaan_id
         return 1
+
+    def get_default(self) -> Dict[str, Any]:
+        return {
+            "nisn": self.nisn,
+            "kebutuhan_khusus_id": self.kebutuhan_khusus_id,
+            "lintang": self.lintang,
+            "bujur": self.bujur,
+            "jenis_tinggal_id": self.jenis_tinggal_id,
+            "anak_keberapa": self.anak_keberapa,
+            "alat_transportasi_id": self.alat_transportasi_id,
+            "penerima_kps": self.penerima_kps,
+            "penerima_kip": self.penerima_kip,
+            "layak_pip": self.layak_pip,
+            "id_layak_pip": self.id_layak_pip,
+            "sekolah_id": self.sekolah.sekolah_id,
+            "kewarganegaraan": self.kewarganegaraan,
+            "no_kks": self.no_kks,
+            "no_kps": self.no_kps,
+            "no_kip": self.no_kip,
+            "nm_kip": self.nm_kip,
+            "kebutuhan_khusus_id_ayah": self.kebutuhan_khusus_id_ayah,
+            "kebutuhan_khusus_id_ibu": self.kebutuhan_khusus_id_ibu,
+            "nama_wali": self.nama_wali,
+            "nik_wali": self.nik_wali,
+            "tahun_lahir_wali": self.tahun_lahir_wali,
+            "jenjang_pendidikan_wali": self.jenjang_pendidikan_wali,
+            "pekerjaan_id_wali": self.pekerjaan_id_wali,
+            "penghasilan_id_wali": self.penghasilan_id_wali,
+            "nomor_telepon_rumah": self.nomor_telepon_rumah,
+            "nomor_telepon_seluler": self.nomor_telepon_seluler,
+            "email": self.email,
+        }
 
 
 @click.group(name="peserta_didik", invoke_without_command=True)
