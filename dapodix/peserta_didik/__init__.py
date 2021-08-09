@@ -1,7 +1,10 @@
 import click
+import random
+
 from dapodix import ClickContext, ContextObject
 from dapodix.utils import parse_range
 
+from .random_longitudinal import RandomLongitudinal
 from .registrasi import RegistrasiPesertaDidikCommand
 
 
@@ -40,11 +43,36 @@ def peserta_didik(ctx: ClickContext, email: str, password: str, server: str):
 @click.argument("filepath", type=click.Path(exists=True), required=True)
 @click.pass_context
 def registrasi(
-    ctx,
+    ctx: ClickContext,
     filepath: str,
     sheet: str,
     range: str,
 ):
     return RegistrasiPesertaDidikCommand(
         dapodik=ctx.obj.dapodik, filepath=filepath, sheet=sheet, rows=parse_range(range)
+    )
+
+
+@peserta_didik.command()
+@click.option("--tinggi-badan", required=True)
+@click.option("--berat-badan", required=True)
+@click.option("--lingkar-kepala", required=True)
+@click.option("--jarak-rumah", required=True)
+@click.option("--jarak-ke-waktu", type=int, required=True)
+@click.pass_context
+def random_longitudinal(
+    ctx: ClickContext,
+    tinggi_badan: str,
+    berat_badan: str,
+    lingkar_kepala: str,
+    jarak_rumah: str,
+    jarak_ke_waktu: int,
+):
+    return RandomLongitudinal(
+        dapodik=ctx.obj.dapodik,
+        tinggi=lambda: random.choice(parse_range(tinggi_badan)),
+        berat=lambda: random.choice(parse_range(berat_badan)),
+        lingkar_kepala=lambda: random.choice(parse_range(lingkar_kepala)),
+        jarak_rumah=lambda: random.choice(parse_range(jarak_rumah)),
+        jarak_waktu=jarak_ke_waktu,
     )
