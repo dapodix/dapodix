@@ -9,7 +9,7 @@ from dapodik.peserta_didik import PesertaDidik, CreatePesertaDidik
 from dapodik.rest import JenjangPendidikan, Pekerjaan, Penghasilan
 
 from dapodix import ContextObject, ClickContext
-from dapodix.utils import get_data_excel
+from dapodix.utils import get_data_excel, parse_range
 
 DATA_INDIVIDU = {
     "nama": "B",
@@ -86,14 +86,12 @@ class RegistrasiPesertaDidik:
         dapodik: Dapodik,
         filepath: str,
         sheet: str,
-        start: int,
-        end: int,
+        rows: List[int],
     ):
         self.dapodik = dapodik
         self.filepath = filepath
         self.sheet = sheet
-        self.start_row = start
-        self.end_row = end
+        self.rows = rows
         self.sekolah = self.dapodik.sekolah()
         self.penghasilan_cache: Dict[tuple, int] = dict()
         self.kode_wilayah_cache: Dict[str, str] = dict()
@@ -106,23 +104,22 @@ class RegistrasiPesertaDidik:
         self.PENGHASILAN: List[Penghasilan] = self.dapodik.penghasilan()
 
     def start(self) -> Dict[int, PesertaDidik]:
-        # TODO Improve range?
         raw_data_individu = get_data_excel(
             self.filepath,
             self.sheet,
-            list(range(self.start_row, self.end_row)),
+            self.rows,
             DATA_INDIVIDU,
         )
         raw_data_ayah = get_data_excel(
             self.filepath,
             self.sheet,
-            list(range(self.start_row, self.end_row)),
+            self.rows,
             DATA_AYAH,
         )
         raw_data_ibu = get_data_excel(
             self.filepath,
             self.sheet,
-            list(range(self.start_row, self.end_row)),
+            self.rows,
             DATA_IBU,
         )
         result: Dict[int, PesertaDidik] = dict()
@@ -278,21 +275,19 @@ def peserta_didik(ctx: ClickContext, email: str, password: str, server: str):
 
 @peserta_didik.command()
 @click.option("--sheet", default="Peserta Didik", help="Nama sheet dalam file excel")
-@click.option("--start", type=int, required=True, help="Baris awal data")
-@click.option("--end", type=int, required=True, help="Baris akhir data")
+@click.option(
+    "--range",
+    required=True,
+    help="Baris data yang akan di masukkan misal 1-10",
+)
 @click.argument("filepath", type=click.Path(exists=True), required=True)
 @click.pass_context
 def registrasi(
     ctx,
     filepath: str,
     sheet: str,
-    start: int,
-    end: int,
+    range: str,
 ):
     return RegistrasiPesertaDidik(
-        dapodik=ctx.obj.dapodik,
-        filepath=filepath,
-        sheet=sheet,
-        start=start,
-        end=end,
+        dapodik=ctx.obj.dapodik, filepath=filepath, sheet=sheet, rows=parse_range(range)
     )
