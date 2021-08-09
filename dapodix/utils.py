@@ -43,3 +43,17 @@ def get_data_excel(
     for row in rows:
         results[row] = get_data_ws(ws, mapping, row)
     return results
+
+
+def parse_range(value: str) -> List[int]:
+    results: List[int] = list()
+    if value.isdigit():
+        results.append(int(value))
+    elif "," in value:
+        for val in value:
+            results.extend(parse_range(val))
+    elif "-" in value:
+        start, end = value.split("-")
+        if start.isdigit() and end.isdigit():
+            results.extend(range(int(start), int(end)))
+    return results
