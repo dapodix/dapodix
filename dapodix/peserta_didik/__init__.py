@@ -41,12 +41,12 @@ def peserta_didik(ctx: ClickContext, email: str, password: str, server: str):
     help="Baris data yang akan di masukkan misal 1-10",
 )
 @click.option(
-    "--registrasi/-no-registrasi",
+    "--registrasi/--no-registrasi",
     default=True,
     help="Proses registrasi",
 )
 @click.option(
-    "--longitudinal/-no-longitudinal",
+    "--longitudinal/--no-longitudinal",
     default=True,
     help="Proses data periodik",
 )
