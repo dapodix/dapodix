@@ -124,11 +124,15 @@ class RegistrasiPesertaDidikCommand:
         filepath: str,
         sheet: str,
         rows: List[int],
+        skip_registrasi: bool = False,
+        skip_longitudinal: bool = False,
     ):
         self.dapodik = dapodik
         self.filepath = filepath
         self.sheet = sheet
         self.rows = rows
+        self.skip_registrasi = skip_registrasi
+        self.skip_longitudinal = skip_longitudinal
         self.sekolah: Sekolah = self.dapodik.sekolah()
         # Individu
         self.agama_cache: Dict[str, int] = dict()
@@ -175,18 +179,24 @@ class RegistrasiPesertaDidikCommand:
             self.rows,
             DATA_IBU,
         )
-        raw_data_registrasi = get_data_excel(
-            self.filepath,
-            self.sheet,
-            self.rows,
-            DATA_REGISTRASI,
-        )
-        raw_data_longitudinal = get_data_excel(
-            self.filepath,
-            self.sheet,
-            self.rows,
-            DATA_LONGITUDINAL,
-        )
+        if self.skip_registrasi:
+            raw_data_registrasi: Dict[int, Dict[str, Any]] = dict()
+        else:
+            raw_data_registrasi = get_data_excel(
+                self.filepath,
+                self.sheet,
+                self.rows,
+                DATA_REGISTRASI,
+            )
+        if self.skip_longitudinal:
+            raw_data_longitudinal: Dict[int, Dict[str, Any]] = dict()
+        else:
+            raw_data_longitudinal = get_data_excel(
+                self.filepath,
+                self.sheet,
+                self.rows,
+                DATA_LONGITUDINAL,
+            )
         peserta_didik_baru: Dict[int, PesertaDidik] = dict()
         for index, data_individu in raw_data_individu.items():
             # Individu
@@ -199,15 +209,17 @@ class RegistrasiPesertaDidikCommand:
             peserta_didik = self.tambah_peserta_didik(data)
             peserta_didik._dapodik = self.dapodik
             # Registrasi
-            data_registrasi = raw_data_registrasi[index]
-            data = self.get_default_registrasi()
-            data.update(self.transform_data_registrasi(**data_registrasi))
-            peserta_didik = self.registrasi_peserta_didik(data, peserta_didik)
+            if not self.skip_registrasi:
+                data_registrasi = raw_data_registrasi[index]
+                data = self.get_default_registrasi()
+                data.update(self.transform_data_registrasi(**data_registrasi))
+                peserta_didik = self.registrasi_peserta_didik(data, peserta_didik)
             # Longitudinal
-            data_longitudinal = raw_data_longitudinal[index]
-            data = self.get_default_longitudinal()
-            data.update(self.transform_data_longitudinal(**data_longitudinal))
-            peserta_didik = self.longitudinal_peserta_didik(data, peserta_didik)
+            if not self.skip_longitudinal:
+                data_longitudinal = raw_data_longitudinal[index]
+                data = self.get_default_longitudinal()
+                data.update(self.transform_data_longitudinal(**data_longitudinal))
+                peserta_didik = self.longitudinal_peserta_didik(data, peserta_didik)
             # Collect
             peserta_didik_baru[index] = peserta_didik
         return peserta_didik_baru

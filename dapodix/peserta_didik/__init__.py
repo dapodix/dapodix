@@ -40,6 +40,16 @@ def peserta_didik(ctx: ClickContext, email: str, password: str, server: str):
     required=True,
     help="Baris data yang akan di masukkan misal 1-10",
 )
+@click.option(
+    "--registrasi/-no-registrasi",
+    default=True,
+    help="Proses registrasi",
+)
+@click.option(
+    "--longitudinal/-no-longitudinal",
+    default=True,
+    help="Proses data periodik",
+)
 @click.argument("filepath", type=click.Path(exists=True), required=True)
 @click.pass_context
 def registrasi(
@@ -47,9 +57,16 @@ def registrasi(
     filepath: str,
     sheet: str,
     range: str,
+    registrasi: bool,
+    longitudinal: bool,
 ):
     return RegistrasiPesertaDidikCommand(
-        dapodik=ctx.obj.dapodik, filepath=filepath, sheet=sheet, rows=parse_range(range)
+        dapodik=ctx.obj.dapodik,
+        filepath=filepath,
+        sheet=sheet,
+        rows=parse_range(range),
+        skip_registrasi=not registrasi,
+        skip_longitudinal=not longitudinal,
     )
 
 
