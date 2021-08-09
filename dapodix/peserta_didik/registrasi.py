@@ -2,11 +2,12 @@ from cachetools import cachedmethod
 from operator import attrgetter
 from typing import Any, Dict, List, Optional
 
-from dapodik import Dapodik
+from dapodik import Dapodik, __semester__
 from dapodik.customrest import Wilayah
 from dapodik.peserta_didik import (
-    PesertaDidik,
     CreatePesertaDidik,
+    PesertaDidik,
+    PesertaDidikLongitudinal,
     RegistrasiPesertaDidik,
 )
 from dapodik.rest import (
@@ -18,6 +19,7 @@ from dapodik.rest import (
     Pekerjaan,
     Penghasilan,
 )
+from dapodik.sekolah import Sekolah
 
 from dapodix.utils import get_data_excel
 
@@ -51,6 +53,15 @@ DATA_REGISTRASI = {
     "a_pernah_tk": "AL",
 }
 
+DATA_LONGITUDINAL = {
+    "tinggi_badan": "AM",
+    "berat_badan": "AN",
+    "lingkar_kepala": "AO",
+    "jarak_rumah_ke_sekolah": "AP",
+    "menit_tempuh_ke_sekolah": "AQ",
+    "jumlah_saudara_kandung": "AR",
+}
+
 DATA_AYAH = {
     "nama_ayah": "R",
     "nik_ayah": "S",
@@ -71,6 +82,7 @@ DATA_IBU = {
 
 
 class RegistrasiPesertaDidikCommand:
+    JARAK_KE_MENIT = 5
     nisn = ""
     kebutuhan_khusus_id = 0
     lintang = 0
@@ -114,7 +126,7 @@ class RegistrasiPesertaDidikCommand:
         self.filepath = filepath
         self.sheet = sheet
         self.rows = rows
-        self.sekolah = self.dapodik.sekolah()
+        self.sekolah: Sekolah = self.dapodik.sekolah()
         # Individu
         self.agama_cache: Dict[str, int] = dict()
         self.kode_wilayah_cache: Dict[str, str] = dict()
@@ -168,7 +180,9 @@ class RegistrasiPesertaDidikCommand:
             data.update(self.transform_data_individu(**data_individu))
             data.update(self.transform_data_ayah(**data_ayah))
             data.update(self.transform_data_ibu(**data_ibu))
-            peserta_didik_baru[index] = self.tambah_peserta_didik(data)
+            peserta_didik = self.tambah_peserta_didik(data)
+            peserta_didik._dapodik = self.dapodik
+            peserta_didik_baru[index] = peserta_didik
         raw_data_registrasi = get_data_excel(
             self.filepath,
             self.sheet,
@@ -182,6 +196,19 @@ class RegistrasiPesertaDidikCommand:
             peserta_didik_baru[index] = self.registrasi_peserta_didik(
                 data, peserta_didik
             )
+        raw_data_longitudinal = get_data_excel(
+            self.filepath,
+            self.sheet,
+            self.rows,
+            DATA_LONGITUDINAL,
+        )
+        for index, data_longitudinal in raw_data_longitudinal.items():
+            data = self.get_default_longitudinal()
+            data.update(self.transform_data_longitudinal(**data_longitudinal))
+            peserta_didik = peserta_didik_baru[index]
+            peserta_didik_baru[index] = self.longitudinal_peserta_didik(
+                data, peserta_didik
+            )
         return peserta_didik_baru
 
     def tambah_peserta_didik(self, data: dict) -> PesertaDidik:
@@ -190,6 +217,13 @@ class RegistrasiPesertaDidikCommand:
             **data,
         )
         return pdb.save(self.dapodik)
+
+    def longitudinal_peserta_didik(
+        self, data: dict, peserta_didik: PesertaDidik
+    ) -> PesertaDidik:
+        longitudinal = PesertaDidikLongitudinal.Create(**data)
+        peserta_didik.create_longitudinal(longitudinal)
+        return peserta_didik
 
     def registrasi_peserta_didik(
         self, data: dict, peserta_didik: PesertaDidik
@@ -200,7 +234,7 @@ class RegistrasiPesertaDidikCommand:
             **data,
         )
         reg_pd.sekolah_id = self.sekolah.sekolah_id
-        peserta_didik._dapodik = self.dapodik
+        # peserta_didik._dapodik = self.dapodik
         peserta_didik.register(reg_pd)
         return peserta_didik
 
@@ -242,6 +276,24 @@ class RegistrasiPesertaDidikCommand:
         kwargs["nipd"] = nipd if nipd else ""
         kwargs["a_pernah_paud"] = 1 if a_pernah_paud == "YA" else 0
         kwargs["a_pernah_tk"] = 1 if a_pernah_tk == "YA" else 0
+        return kwargs
+
+    def transform_data_longitudinal(
+        self,
+        jarak_rumah_ke_sekolah: int,
+        menit_tempuh_ke_sekolah: int,
+        **kwargs: Any,
+    ) -> dict:
+        if jarak_rumah_ke_sekolah <= 1:
+            kwargs["jarak_rumah_ke_sekolah"] = 1
+            kwargs["jarak_rumah_ke_sekolah_km"] = 0
+        else:
+            kwargs["jarak_rumah_ke_sekolah"] = 2
+            kwargs["jarak_rumah_ke_sekolah_km"] = jarak_rumah_ke_sekolah
+        if not isinstance(menit_tempuh_ke_sekolah, int):
+            menit_tempuh_ke_sekolah = jarak_rumah_ke_sekolah * self.JARAK_KE_MENIT
+        kwargs["waktu_tempuh_ke_sekolah"] = menit_tempuh_ke_sekolah // 60
+        kwargs["menit_tempuh_ke_sekolah"] = menit_tempuh_ke_sekolah % 60
         return kwargs
 
     def transform_data_ayah(
@@ -394,9 +446,9 @@ class RegistrasiPesertaDidikCommand:
     def get_default_registrasi(self) -> Dict[str, Any]:
         return {
             "registrasi_id": "Admin.model.RegistrasiPesertaDidik-3",
-            # "peserta_didik_id":"b5197708-fb76-4da2-ae4b-ebbed2447c90",
+            # "peserta_didik_id":"",
             "jurusan_sp_id": "",
-            # "sekolah_id":"dc021957-48cb-42de-9d5b-b5264e542418",
+            # "sekolah_id":"",
             # "jenis_pendaftaran_id":1,
             # "tanggal_masuk_sekolah": "2021-07-05",
             "jenis_keluar_id": "",
@@ -418,4 +470,23 @@ class RegistrasiPesertaDidikCommand:
             "id_hobby_str": "",
             "id_cita_str": "",
             "jenis_keluar_id_str": "",
+        }
+
+    def get_default_longitudinal(self) -> Dict[str, Any]:
+        return {
+            "peserta_didik_longitudinal_id": "Admin.model.PesertaDidikLongitudinal-40",
+            "semester_id": __semester__,
+            # "peserta_didik_id": "",
+            # "tinggi_badan": 75,
+            # "berat_badan": 11,
+            "jarak_rumah_ke_sekolah_km": 0,
+            "jarak_rumah_ke_sekolah": 1,
+            "waktu_tempuh_ke_sekolah": 0,
+            # "menit_tempuh_ke_sekolah": 5,
+            # "jumlah_saudara_kandung": 4,
+            "vld_count": 0,
+            "peserta_didik_longitudinal_id_str": "",
+            "peserta_didik_id_str": "",
+            "semester_id_str": "",
+            # "lingkar_kepala": 20,
         }
