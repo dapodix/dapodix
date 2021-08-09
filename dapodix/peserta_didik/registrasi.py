@@ -175,8 +175,21 @@ class RegistrasiPesertaDidikCommand:
             self.rows,
             DATA_IBU,
         )
+        raw_data_registrasi = get_data_excel(
+            self.filepath,
+            self.sheet,
+            self.rows,
+            DATA_REGISTRASI,
+        )
+        raw_data_longitudinal = get_data_excel(
+            self.filepath,
+            self.sheet,
+            self.rows,
+            DATA_LONGITUDINAL,
+        )
         peserta_didik_baru: Dict[int, PesertaDidik] = dict()
         for index, data_individu in raw_data_individu.items():
+            # Individu
             data_ayah = raw_data_ayah[index]
             data_ibu = raw_data_ibu[index]
             data = self.get_default()
@@ -185,33 +198,18 @@ class RegistrasiPesertaDidikCommand:
             data.update(self.transform_data_ibu(**data_ibu))
             peserta_didik = self.tambah_peserta_didik(data)
             peserta_didik._dapodik = self.dapodik
-            peserta_didik_baru[index] = peserta_didik
-        raw_data_registrasi = get_data_excel(
-            self.filepath,
-            self.sheet,
-            self.rows,
-            DATA_REGISTRASI,
-        )
-        for index, data_registrasi in raw_data_registrasi.items():
+            # Registrasi
+            data_registrasi = raw_data_registrasi[index]
             data = self.get_default_registrasi()
             data.update(self.transform_data_registrasi(**data_registrasi))
-            peserta_didik = peserta_didik_baru[index]
-            peserta_didik_baru[index] = self.registrasi_peserta_didik(
-                data, peserta_didik
-            )
-        raw_data_longitudinal = get_data_excel(
-            self.filepath,
-            self.sheet,
-            self.rows,
-            DATA_LONGITUDINAL,
-        )
-        for index, data_longitudinal in raw_data_longitudinal.items():
+            peserta_didik = self.registrasi_peserta_didik(data, peserta_didik)
+            # Longitudinal
+            data_longitudinal = raw_data_longitudinal[index]
             data = self.get_default_longitudinal()
             data.update(self.transform_data_longitudinal(**data_longitudinal))
-            peserta_didik = peserta_didik_baru[index]
-            peserta_didik_baru[index] = self.longitudinal_peserta_didik(
-                data, peserta_didik
-            )
+            peserta_didik = self.longitudinal_peserta_didik(data, peserta_didik)
+            # Collect
+            peserta_didik_baru[index] = peserta_didik
         return peserta_didik_baru
 
     def tambah_peserta_didik(self, data: dict) -> PesertaDidik:
@@ -224,6 +222,7 @@ class RegistrasiPesertaDidikCommand:
     def longitudinal_peserta_didik(
         self, data: dict, peserta_didik: PesertaDidik
     ) -> PesertaDidik:
+        data["peserta_didik_id"] = peserta_didik.peserta_didik_id
         longitudinal = PesertaDidikLongitudinal.Create(**data)
         peserta_didik.create_longitudinal(longitudinal)
         return peserta_didik
@@ -238,7 +237,7 @@ class RegistrasiPesertaDidikCommand:
         )
         reg_pd.sekolah_id = self.sekolah.sekolah_id
         # peserta_didik._dapodik = self.dapodik
-        peserta_didik.register(reg_pd)
+        peserta_didik.registrasi(reg_pd)
         return peserta_didik
 
     def transform_data_individu(
