@@ -12,16 +12,12 @@ Alat bantu aplikasi dapodik.
 
 ## Install
 
-Pastikan [python 3.7](https://www.python.org/ftp/python/3.7.9/python-3.7.9-amd64.exe) terinstall,
+Pastikan minimal [python versi 3.7](https://www.python.org/downloads/release/python-3711/) terinstall,
 kemudian jalankan perintah di bawah dalam Command Prompt atau Powershell (di Windows + X):
 
 ```bash
-pip install --upgrade dapodik
+pip install --upgrade dapodix
 ```
-
-## Release
-
-Perkiraan release versi 1 akhir bulan September 2020,
 
 ## Fitur yang akan datang
 
