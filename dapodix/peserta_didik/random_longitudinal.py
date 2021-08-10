@@ -89,7 +89,9 @@ class RandomLongitudinal:
             click.echo(f"Longitudinal {peserta_didik} : {new_longitudinal}")
             total += 1
         if total > 0:
-            click.echo(f"Berhasil membuat data longitudinal sebanyak {total} peserta didik")
+            click.echo(
+                f"Berhasil membuat data longitudinal sebanyak {total} peserta didik"
+            )
         else:
             click.echo(f"Semua peserta didik sudah memiliki data longitudinal")
 
