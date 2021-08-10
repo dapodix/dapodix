@@ -4,6 +4,13 @@ import random
 from dapodix import ClickContext, ContextObject
 from dapodix.utils import parse_range
 
+from .excel import (
+    DATA_INDIVIDU,
+    DATA_REGISTRASI,
+    DATA_AYAH,
+    DATA_IBU,
+    DATA_LONGITUDINAL,
+)
 from .random_longitudinal import RandomLongitudinal
 from .registrasi import RegistrasiPesertaDidikCommand
 
