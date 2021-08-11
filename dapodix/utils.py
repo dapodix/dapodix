@@ -1,6 +1,21 @@
-from openpyxl import load_workbook
+import os
+from openpyxl import load_workbook, Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from typing import Any, Dict, List
+
+
+def get_workbook(filepath: str) -> Workbook:
+    """get_workbook Open Workbook if file exist
+
+    Args:
+        filepath (str): File path
+
+    Returns:
+        Workbook: Workbook
+    """
+    if os.path.isfile(filepath):
+        return load_workbook(filepath)
+    return Workbook()
 
 
 def get_data_ws(ws: Worksheet, mapping: Dict[str, str], row: int) -> Dict[str, Any]:
