@@ -78,3 +78,8 @@ def parse_range(value: str) -> List[int]:
                 # For 1-2
                 results.extend(range(int(start), int(end) + 1))
     return results
+
+
+def snake_to_title(text: str) -> str:
+    text = text.replace("_", " ")
+    return text.title()
