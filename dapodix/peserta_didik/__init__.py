@@ -10,6 +10,7 @@ from .excel import (
     DATA_AYAH,
     DATA_IBU,
     DATA_LONGITUDINAL,
+    ALL_DATA_INDIVIDU,
 )
 from .random_longitudinal import RandomLongitudinal
 from .registrasi import RegistrasiPesertaDidikCommand
