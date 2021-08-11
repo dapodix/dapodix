@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dapodix"
-version = "0.2.0"
+version = "0.3.0"
 description = "Alat bantu aplikasi Dapodik kemdikbud"
 authors = ["hexatester <hexatester@protonmail.com>"]
 license = "MIT"
