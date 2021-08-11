@@ -12,6 +12,7 @@ from .excel import (
     DATA_LONGITUDINAL,
     ALL_DATA_INDIVIDU,
 )
+from .eksport import EksporPesertaDidikCommand
 from .random_longitudinal import RandomLongitudinal
 from .registrasi import RegistrasiPesertaDidikCommand
 
@@ -39,6 +40,24 @@ def peserta_didik(ctx: ClickContext, email: str, password: str, server: str):
         click.echo("Daftar Peserta didik")
         for pd in dapodik.peserta_didik(sekolah_id=sekolah.sekolah_id):
             click.echo(str(pd))
+
+
+@peserta_didik.command()
+@click.option("--sheet", default="Peserta Didik", help="Nama sheet dalam file excel")
+@click.option(
+    "--header/--no-header",
+    default=True,
+    help="Tambah header setiap kolom",
+)
+@click.argument("filepath", type=click.Path(), required=True)
+@click.pass_context
+def ekspor(ctx: ClickContext, sheet: str, header: bool, filepath: str):
+    return EksporPesertaDidikCommand(
+        dapodik=ctx.obj.dapodik,
+        filepath=filepath,
+        sheet=sheet,
+        header=header,
+    )
 
 
 @peserta_didik.command()
