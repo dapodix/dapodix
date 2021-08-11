@@ -1,8 +1,8 @@
 from openpyxl.worksheet.worksheet import Worksheet
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dapodik import Dapodik, __semester__
-from dapodik.peserta_didik import PesertaDidik
+from dapodik.peserta_didik import PesertaDidik, PesertaDidikLongitudinal
 
 from . import ALL_DATA_INDIVIDU, DATA_LONGITUDINAL
 from dapodix.utils import get_workbook, snake_to_title
@@ -45,10 +45,24 @@ class EksporPesertaDidikCommand:
 
     def peserta_didik_to_row(self, pd: PesertaDidik, row: int):
         for name, col in self.MAPPING_INDIVIDU.items():
+            if not hasattr(pd, name):
+                continue
             value = getattr(pd, name)
             if value is None:
-                self.WORKSHEET[f"{col}{row}"] = value
+                continue
+            self.WORKSHEET[f"{col}{row}"] = value
         for name, col in self.MAPPING_LONGITUDINAL.items():
-            value = getattr(pd, name)
+            longitudinal: Optional[PesertaDidikLongitudinal] = None
+            longitudinals = self.dapodik.peserta_didik_longitudinal(
+                peserta_didik_id=pd.peserta_didik_id,
+            )
+            for ltd in longitudinals:
+                if ltd.semester_id == __semester__:
+                    longitudinal = ltd
+                    break
+            if not hasattr(longitudinal, name):
+                continue
+            value = getattr(longitudinal, name)
             if value is None:
-                self.WORKSHEET[f"{col}{row}"] = value
+                continue
+            self.WORKSHEET[f"{col}{row}"] = value
