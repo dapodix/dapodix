@@ -1,6 +1,8 @@
 import click
 
-from . import __version__, __dapodik_version__
+from dapodik import __dapodik_version__, __semester__, __tahun_ajaran__
+
+from . import __version__
 from .peserta_didik import peserta_didik
 
 
@@ -9,7 +11,15 @@ def main():
     pass
 
 
-main.add_command(peserta_didik, "peserta_didik")
+main.add_command(peserta_didik, "peserta-didik")
+
+
+@main.command()
+def version():
+    click.echo(f"Dapodix versi {__version__}")
+    click.echo(f"Untuk dapodik {__dapodik_version__}")
+    click.echo(f"Semester : {__semester__}")
+    click.echo(f"Tahun ajaran : {__tahun_ajaran__}")
 
 
 if __name__ == "__main__":
