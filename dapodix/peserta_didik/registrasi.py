@@ -311,7 +311,7 @@ class RegistrasiPesertaDidikCommand:
         if pekerjaan in (90, 98, 1):
             # Tidak bekerja
             return 99
-        if val and val.isdigit():
+        if val and (isinstance(val, int) or val.isdigit()):
             digit_val = int(val)
             if digit_val <= 0:
                 return 99
