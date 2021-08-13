@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from openpyxl import load_workbook, Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 from typing import Any, Dict, List
@@ -83,3 +84,16 @@ def parse_range(value: str) -> List[int]:
 def snake_to_title(text: str) -> str:
     text = text.replace("_", " ")
     return text.title()
+
+
+def parse_date(text: str, SEPARATOR: str = "") -> date:
+    if SEPARATOR:
+        pass
+    elif "/" in text:
+        SEPARATOR = "/"
+    elif ":" in text:
+        SEPARATOR = ":"
+    else:
+        SEPARATOR = " "
+    tanggal, bulan, tahun = text.split(SEPARATOR)
+    return date(int(tahun), int(bulan), int(tanggal))
