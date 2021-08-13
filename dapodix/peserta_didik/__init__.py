@@ -1,6 +1,8 @@
 import click
 import random
 
+from dapodik import __semester__
+
 from dapodix import ClickContext, ContextObject
 from dapodix.utils import parse_range
 
@@ -28,12 +30,14 @@ from .registrasi import RegistrasiPesertaDidikCommand
     help="Password dapodik",
 )
 @click.option("--server", default="http://localhost:5774/", help="URL aplikasi dapodik")
+@click.option("--semester", default=__semester__, help="Semester id")
 @click.pass_context
-def peserta_didik(ctx: ClickContext, email: str, password: str, server: str):
+def peserta_didik(ctx: ClickContext, email: str, password: str, server: str, semester: str):
     ctx.ensure_object(ContextObject)
     ctx.obj.username = email
     ctx.obj.password = password
     ctx.obj.server = server
+    ctx.obj.semester = semester
     if ctx.invoked_subcommand is None:
         dapodik = ctx.obj.dapodik
         sekolah = dapodik.sekolah()
