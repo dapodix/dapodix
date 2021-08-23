@@ -310,23 +310,23 @@ class RegistrasiPesertaDidikCommand:
     def guest_penghasilan(self, val: str, pekerjaan: int) -> int:
         if pekerjaan in (90, 98, 1):
             # Tidak bekerja
-            return 99
-        if val and (isinstance(val, int) or val.isdigit()):
+            penghasilan_id = 99
+        elif val and (isinstance(val, int) or val.isdigit()):
             digit_val = int(val)
             if digit_val <= 0:
-                return 99
+                penghasilan_id = 99
             for penghasilan in self.PENGHASILAN:
                 if penghasilan.batas_atas < digit_val < penghasilan.batas_bawah:
-                    return penghasilan.penghasilan_id
+                    penghasilan_id = penghasilan.penghasilan_id
                 elif (
                     penghasilan.batas_bawah == 0 and digit_val > penghasilan.batas_atas
                 ):
-                    return penghasilan.penghasilan_id
+                    penghasilan_id = penghasilan.penghasilan_id
         elif val:
             for penghasilan in self.PENGHASILAN:
                 if val in penghasilan.nama:
-                    return penghasilan.penghasilan_id
-        return 99
+                    penghasilan_id = penghasilan.penghasilan_id
+        return penghasilan_id if penghasilan_id != 0 else 99
 
     @cachedmethod(attrgetter("agama_cache"))
     def parse_agama(self, keyword: str) -> int:
