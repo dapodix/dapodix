@@ -18,9 +18,11 @@ class EksporPesertaDidikCommand:
         filepath: str,
         sheet: str = "Peserta Didik",
         header: bool = True,
+        skip_longitudinal: bool = False,
     ):
         self.dapodik = dapodik
         self.offset = 2 if header else 1
+        self.skip_longitudinal = skip_longitudinal
         self.sekolah = self.dapodik.sekolah()
         self.peserta_didik = self.get_peserta_didik()
         self.WORKBOOK = get_workbook(filepath)
@@ -51,18 +53,19 @@ class EksporPesertaDidikCommand:
             if value is None:
                 continue
             self.WORKSHEET[f"{col}{row}"] = value
-        for name, col in self.MAPPING_LONGITUDINAL.items():
-            longitudinal: Optional[PesertaDidikLongitudinal] = None
-            longitudinals = self.dapodik.peserta_didik_longitudinal(
-                peserta_didik_id=pd.peserta_didik_id,
-            )
-            for ltd in longitudinals:
-                if ltd.semester_id == __semester__:
-                    longitudinal = ltd
-                    break
-            if not hasattr(longitudinal, name):
-                continue
-            value = getattr(longitudinal, name)
-            if value is None:
-                continue
-            self.WORKSHEET[f"{col}{row}"] = value
+        if not self.skip_longitudinal:
+            for name, col in self.MAPPING_LONGITUDINAL.items():
+                longitudinal: Optional[PesertaDidikLongitudinal] = None
+                longitudinals = self.dapodik.peserta_didik_longitudinal(
+                    peserta_didik_id=pd.peserta_didik_id,
+                )
+                for ltd in longitudinals:
+                    if ltd.semester_id == __semester__:
+                        longitudinal = ltd
+                        break
+                if not hasattr(longitudinal, name):
+                    continue
+                value = getattr(longitudinal, name)
+                if value is None:
+                    continue
+                self.WORKSHEET[f"{col}{row}"] = value

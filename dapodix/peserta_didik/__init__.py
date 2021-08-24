@@ -32,7 +32,9 @@ from .registrasi import RegistrasiPesertaDidikCommand
 @click.option("--server", default="http://localhost:5774/", help="URL aplikasi dapodik")
 @click.option("--semester", default=__semester__, help="Semester id")
 @click.pass_context
-def peserta_didik(ctx: ClickContext, email: str, password: str, server: str, semester: str):
+def peserta_didik(
+    ctx: ClickContext, email: str, password: str, server: str, semester: str
+):
     ctx.ensure_object(ContextObject)
     ctx.obj.username = email
     ctx.obj.password = password
@@ -53,14 +55,26 @@ def peserta_didik(ctx: ClickContext, email: str, password: str, server: str, sem
     default=True,
     help="Tambah header setiap kolom",
 )
+@click.option(
+    "--longitudinal/--no-longitudinal",
+    default=True,
+    help="Proses data periodik",
+)
 @click.argument("filepath", type=click.Path(), required=True)
 @click.pass_context
-def ekspor(ctx: ClickContext, sheet: str, header: bool, filepath: str):
+def ekspor(
+    ctx: ClickContext,
+    sheet: str,
+    header: bool,
+    filepath: str,
+    longitudinal: bool,
+):
     return EksporPesertaDidikCommand(
         dapodik=ctx.obj.dapodik,
         filepath=filepath,
         sheet=sheet,
         header=header,
+        skip_longitudinal=not longitudinal,
     )
 
 
