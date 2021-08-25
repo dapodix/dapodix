@@ -177,6 +177,7 @@ class RegistrasiPesertaDidikCommand:
         self, data: dict, peserta_didik: PesertaDidik
     ) -> PesertaDidik:
         data["peserta_didik_id"] = peserta_didik.peserta_didik_id
+        data["peserta_didik_longitudinal_id"] = "Admin.model.PesertaDidikLongitudinal-5"
         longitudinal = PesertaDidikLongitudinal.Create(**data)
         peserta_didik.create_longitudinal(longitudinal)
         return peserta_didik
@@ -308,9 +309,10 @@ class RegistrasiPesertaDidikCommand:
 
     @cachedmethod(attrgetter("penghasilan_cache"))
     def guest_penghasilan(self, val: str, pekerjaan: int) -> int:
+        penghasilan_id = 99
         if pekerjaan in (90, 98, 1):
             # Tidak bekerja
-            penghasilan_id = 99
+            pass
         elif val and (isinstance(val, int) or val.isdigit()):
             digit_val = int(val)
             if digit_val <= 0:
