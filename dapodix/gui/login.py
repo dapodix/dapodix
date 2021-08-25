@@ -1,10 +1,11 @@
 import tkinter as tk
-from dapodik import __semester__
+from dapodik import __semester__, Dapodik
 
 
 class LoginFrame(tk.Frame):
-    def __init__(self, master=None, cnf=None, **kw):
+    def __init__(self, master=None, on_login=None, cnf=None, **kw):
         super(LoginFrame, self).__init__(master, cnf=cnf if cnf else {}, **kw)
+        on_login = on_login if callable(on_login) else self.login
         self.geometry("400x150")
         self.title("Dapodix Login")
         # Email Form
@@ -26,14 +27,22 @@ class LoginFrame(tk.Frame):
         self.semesterEntry = tk.Entry(self, textvariable=self.semester)
         self.semesterEntry.grid(row=2, column=1)
         # Server Form
-        self.semesterLabel = tk.Label(self, text="Server")
-        self.semesterLabel.grid(row=3, column=0)
-        self.semester = tk.StringVar(self, value="http://localhost:5774/")
-        self.semesterEntry = tk.Entry(self, textvariable=self.semester)
-        self.semesterEntry.grid(row=3, column=1)
+        self.serverLabel = tk.Label(self, text="Server")
+        self.serverLabel.grid(row=3, column=0)
+        self.server = tk.StringVar(self, value="http://localhost:5774/")
+        self.serverEntry = tk.Entry(self, textvariable=self.server)
+        self.serverEntry.grid(row=3, column=1)
         # Button
-        self.loginButton = tk.Button(self, text="Masuk", command=self.login)
+        self.loginButton = tk.Button(self, text="Masuk", command=on_login)
         self.loginButton.grid(row=5, column=0)
 
     def login(self, email: str, password: str):
         print(f"{email} {password}")
+
+    def dapodik(self) -> Dapodik:
+        return Dapodik(
+            username=self.emailEntry.get(),
+            password=self.passwordEntry.get(),
+            semester_id=self.semesterEntry.get(),
+            server=self.serverEntry.get(),
+        )
