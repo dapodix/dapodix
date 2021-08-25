@@ -6,8 +6,6 @@ class LoginFrame(tk.Frame):
     def __init__(self, master=None, on_login=None, cnf=None, **kw):
         super(LoginFrame, self).__init__(master, cnf=cnf if cnf else {}, **kw)
         on_login = on_login if callable(on_login) else self.login
-        self.geometry("400x150")
-        self.title("Dapodix Login")
         # Email Form
         self.emailLabel = tk.Label(self, text="Email")
         self.emailLabel.grid(row=0, column=0)
@@ -36,7 +34,9 @@ class LoginFrame(tk.Frame):
         self.loginButton = tk.Button(self, text="Masuk", command=on_login)
         self.loginButton.grid(row=5, column=0)
 
-    def login(self, email: str, password: str):
+    def login(self):
+        email = self.emailEntry.get()
+        password = self.passwordEntry.get()
         print(f"{email} {password}")
 
     def dapodik(self) -> Dapodik:

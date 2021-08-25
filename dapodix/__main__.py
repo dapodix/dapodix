@@ -1,14 +1,23 @@
 import click
+import tkinter as tk
 
 from dapodik import __dapodik_version__, __semester__, __tahun_ajaran__
 
 from . import __version__
 from .peserta_didik import peserta_didik
+from .gui import MainApplication
 
 
 @click.group("dapodix")
 def main():
     pass
+
+
+@main.command("gui")
+def gui():
+    root = tk.Tk()
+    MainApplication(root).pack(side="top", fill="both", expand=True)
+    root.mainloop()
 
 
 main.add_command(peserta_didik, "peserta-didik")
