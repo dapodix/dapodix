@@ -27,7 +27,8 @@ class RandomLongitudinal:
         if self.sekolah:
             click.echo(f"Berhasil login @{self.sekolah.nama}")
         self.PESERTA_DIDIK: List[PesertaDidik] = self.dapodik.peserta_didik(
-            self.sekolah.sekolah_id
+            self.sekolah.sekolah_id,
+            limit=1000000,
         )
         click.echo(f"Berhasil memuat peserta didik sebanyak {len(self.PESERTA_DIDIK)}")
         try:
