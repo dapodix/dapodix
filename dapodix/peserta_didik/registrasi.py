@@ -1,6 +1,6 @@
 from cachetools import cachedmethod
 from operator import attrgetter
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from dapodik import Dapodik, __semester__
 from dapodik.customrest import Wilayah
@@ -230,8 +230,8 @@ class RegistrasiPesertaDidikCommand:
         nipd: str,
         id_hobby: str,
         id_cita: str,
-        a_pernah_paud: str,
-        a_pernah_tk: str,
+        a_pernah_paud: Union[str, int],
+        a_pernah_tk: Union[str, int],
         **kwargs: Any,
     ) -> dict:
         kwargs["jenis_pendaftaran_id"] = self.parse_pendaftaran(jenis_pendaftaran_id)
@@ -239,8 +239,14 @@ class RegistrasiPesertaDidikCommand:
         kwargs["id_cita"] = self.parse_cita(id_cita)
         kwargs["sekolah_asal"] = sekolah_asal if sekolah_asal else ""
         kwargs["nipd"] = nipd if nipd else ""
-        kwargs["a_pernah_paud"] = 1 if a_pernah_paud == "YA" else 0
-        kwargs["a_pernah_tk"] = 1 if a_pernah_tk == "YA" else 0
+        if isinstance(a_pernah_paud, int):
+            kwargs["a_pernah_paud"] = a_pernah_paud
+        else:
+            kwargs["a_pernah_paud"] = 1 if a_pernah_paud == "YA" else 0
+        if isinstance(a_pernah_tk, int):
+            kwargs["a_pernah_tk"] = a_pernah_tk
+        else:
+            kwargs["a_pernah_tk"] = 1 if a_pernah_tk == "YA" else 0
         return kwargs
 
     def transform_data_longitudinal(
@@ -263,7 +269,7 @@ class RegistrasiPesertaDidikCommand:
 
     def transform_data_ayah(
         self,
-        tahun_lahir_ayah: str,
+        tahun_lahir_ayah: Union[str, int],
         jenjang_pendidikan_ayah: str,
         pekerjaan_id_ayah: str,
         penghasilan_id_ayah: str,
@@ -286,7 +292,7 @@ class RegistrasiPesertaDidikCommand:
 
     def transform_data_ibu(
         self,
-        tahun_lahir_ibu: str,
+        tahun_lahir_ibu: Union[str, int],
         jenjang_pendidikan_ibu: str,
         pekerjaan_id_ibu: str,
         penghasilan_id_ibu: str,
@@ -308,7 +314,9 @@ class RegistrasiPesertaDidikCommand:
         return kwargs
 
     @cachedmethod(attrgetter("penghasilan_cache"))
-    def guest_penghasilan(self, val: str, pekerjaan: int) -> int:
+    def guest_penghasilan(self, val: Union[str, int], pekerjaan: int) -> int:
+        if isinstance(val, int):
+            return val
         penghasilan_id = 99
         if pekerjaan in (90, 98, 1):
             # Tidak bekerja
@@ -331,7 +339,9 @@ class RegistrasiPesertaDidikCommand:
         return penghasilan_id if penghasilan_id != 0 else 99
 
     @cachedmethod(attrgetter("agama_cache"))
-    def parse_agama(self, keyword: str) -> int:
+    def parse_agama(self, keyword: Union[str, int]) -> int:
+        if isinstance(keyword, int):
+            return keyword
         for agama in self.AGAMA:
             if keyword in agama.nama:
                 return agama.agama_id
@@ -343,7 +353,9 @@ class RegistrasiPesertaDidikCommand:
         return wilayah[0].kode_wilayah
 
     @cachedmethod(attrgetter("jenjang_pendidikan_cache"))
-    def parse_jenjang_pendidikan(self, val: str) -> int:
+    def parse_jenjang_pendidikan(self, val: Union[str, int]) -> int:
+        if isinstance(val, int):
+            return val
         for jenjang_pendidikan in self.JENJANG_PENDIDIKAN:
             if val in jenjang_pendidikan.nama:
                 return jenjang_pendidikan.jenjang_pendidikan_id
@@ -351,6 +363,8 @@ class RegistrasiPesertaDidikCommand:
 
     @cachedmethod(attrgetter("pekerjaan_cache"))
     def parse_pekerjaan(self, val: str) -> int:
+        if isinstance(val, int):
+            return val
         for pekerjaan in self.PEKERJAAN:
             if val in pekerjaan.nama:
                 return pekerjaan.pekerjaan_id
@@ -358,6 +372,8 @@ class RegistrasiPesertaDidikCommand:
 
     @cachedmethod(attrgetter("cita_cache"))
     def parse_cita(self, val: str) -> int:
+        if isinstance(val, int):
+            return val
         for cita in self.CITA:
             if val in cita.nm_cita:
                 return cita.id_cita
@@ -365,6 +381,8 @@ class RegistrasiPesertaDidikCommand:
 
     @cachedmethod(attrgetter("hobby_cache"))
     def parse_hobby(self, val: str) -> int:
+        if isinstance(val, int):
+            return val
         for hobby in self.HOBBY:
             if val in hobby.nm_hobby:
                 return hobby.id_hobby
@@ -372,6 +390,8 @@ class RegistrasiPesertaDidikCommand:
 
     @cachedmethod(attrgetter("pendaftaran_cache"))
     def parse_pendaftaran(self, val: str) -> int:
+        if isinstance(val, int):
+            return val
         for pendaftaran in self.PENDAFTARAN:
             if val in pendaftaran.nama:
                 return pendaftaran.jenis_pendaftaran_id
